@@ -1,15 +1,13 @@
-
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 12 21:10:17 2018
 
 @author: Hp-duan
 """
-#面向对象版的全连接神经网络实现
-#并生成了一些数据来进行训练并测试，以及梯度测试
 import math
 import random
 from functools import *
+
 
 def sigmoid(x):
     return 1.0/(1+math.exp(-x))##折腾了这么长时间，原来是激活函数错了，少了一个负号！？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
@@ -137,8 +135,7 @@ class Network:
         for i in range(epoch):
             for j in range(len(dataset)):
                 self.train_one_sample(labels[j],dataset[j],rate)
-                print('%d Epoch and %d data:'%(i,j))
-                self.dump()
+                
     def train_one_sample(self,labels,data,rate):
         self.predict(data)
         self.calc_deltas(labels)
@@ -186,10 +183,31 @@ class Network:
         for layer in self.layers:
             layer.dump()
         for conn in self.conns.connections:
-            print(conn) 
-#完成了基本的模型，没有写梯度测试，以后再写  还有一个问题就是关于权重初始化的问题             
-#######################################################################
-#测试
+            print(conn)
+            
+#进行梯度测试！            
+def calc_error(vec1,vec2):   #计算误差Etotal
+    vec=list(map(lambda v:(v[0]-v[1])*(v[0]-v[1]),list(zip(vec1,vec2))))
+    return 0.5*reduce(lambda a,b:a+b,vec)
+
+def gradient_check(network,sample_label,sample_feature):#计算真实梯度并与得到的梯度比较
+    network.get_gradient(sample_label,sample_feature)
+   
+    for conn in network.conns.connections:
+        actual_gradient=conn.gradient
+        epsilon=0.0001
+        conn.weight+=epsilon
+        error1=calc_error(network.predict(sample_feature),sample_label)
+        conn.weight-=2*epsilon
+        error2=calc_error(network.predict(sample_feature),sample_label)
+        expected_gradient=(error2-error1)/(2*epsilon)
+        print ('expected gradient:\t%f\nactual gradient:\t%f'%(expected_gradient,actual_gradient))
+def gradient_check_test():
+    net=Network([2,2,2])
+    sample_feature=[0.9,0.1]
+    sample_label=[0.9,0.1]
+    gradient_check(net,sample_label,sample_feature)
+#用于生成正确格式的数据    
 class Normalizer:
     def __init__(self):
         self.mask=[0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80]
@@ -230,34 +248,14 @@ def correct_ratio(network):
         if test_one_example(network,i)==i:
             correct+=1
     print('correct:%u'%(correct))
-   
-##################################
-#检查误差
-    #检查出了错误，梯度符号错了，为什么呢?推导哪一步出现了问题？
-def calc_error(vec1,vec2):   
-    vec=list(map(lambda v:(v[0]-v[1])*(v[0]-v[1]),list(zip(vec1,vec2))))
-    return 0.5*reduce(lambda a,b:a+b,vec)
-def gradient_check(network,sample_label,sample_feature):
-    network.get_gradient(sample_label,sample_feature)
-   
-    for conn in network.conns.connections:
-        actual_gradient=conn.gradient
-        epsilon=0.0001
-        conn.weight+=epsilon
-        error1=calc_error(network.predict(sample_feature),sample_label)
-        conn.weight-=2*epsilon
-        error2=calc_error(network.predict(sample_feature),sample_label)
-        expected_gradient=(error2-error1)/(2*epsilon)
-        print ('expected gradient:\t%f\nactual gradient:\t%f'%(expected_gradient,actual_gradient))
-def gradient_check_test():
-    net=Network([2,2,2])
-    sample_feature=[0.9,0.1]
-    sample_label=[0.9,0.1]
-    gradient_check(net,sample_label,sample_feature)
 
 if __name__=='__main__':
-    #gradient_check_test() #测试gradient是否正确！
-    net = Network([8, 3, 8])
+    #gradient_check_test()
+    net=Network([8,3,8])
     train(net)
-    #net.dump()
     correct_ratio(net)
+    
+
+
+
+        
